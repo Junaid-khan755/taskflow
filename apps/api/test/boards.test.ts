@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { prisma } from '../src/db.js';
-import { api, createBoard } from './helpers.js';
+import { api, createBoard, signUp } from './helpers.js';
 
 describe('workspaces', () => {
+  beforeEach(() => signUp('Ann'));
+
   it('creates a workspace', async () => {
     const res = await api.post('/api/workspaces').send({ name: 'Acme', slug: 'acme' }).expect(201);
     expect(res.body).toMatchObject({ name: 'Acme', slug: 'acme' });
@@ -19,11 +21,14 @@ describe('workspaces', () => {
     expect(res.body.details).toHaveProperty('slug');
   });
 
-  it('lists members with their roles', async () => {
-    const { workspace, user } = await createBoard();
+  it('makes the creator the owner', async () => {
+    const { body: workspace } = await api
+      .post('/api/workspaces')
+      .send({ name: 'Acme', slug: 'acme' })
+      .expect(201);
     const res = await api.get(`/api/workspaces/${workspace.id}/members`).expect(200);
     expect(res.body).toEqual([
-      { role: 'OWNER', user: { id: user.id, name: user.name, email: user.email } },
+      { role: 'OWNER', user: { id: expect.any(String), name: 'Ann', email: 'ann@example.com' } },
     ]);
   });
 
@@ -60,6 +65,7 @@ describe('boards', () => {
   });
 
   it('returns 400 for a malformed id and 404 for an unknown one', async () => {
+    await signUp('Ann');
     await api.get('/api/boards/not-a-uuid').expect(400);
     await api.get(`/api/boards/${crypto.randomUUID()}`).expect(404);
   });

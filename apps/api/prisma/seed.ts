@@ -1,6 +1,9 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
+import { hashPassword } from '../src/lib/password.js';
+
+const DEMO_PASSWORD = 'password123';
 
 // Fills the dev database with demo data: `npm run db:seed -w apps/api`.
 // It wipes existing data first, so never point it at production.
@@ -14,9 +17,11 @@ async function main() {
   await prisma.workspace.deleteMany();
   await prisma.user.deleteMany();
 
+  // Both demo users log in with this password
+  const passwordHash = await hashPassword(DEMO_PASSWORD);
   const [alice, bob] = await Promise.all([
-    prisma.user.create({ data: { email: 'alice@example.com', name: 'Alice Chen' } }),
-    prisma.user.create({ data: { email: 'bob@example.com', name: 'Bob Martin' } }),
+    prisma.user.create({ data: { email: 'alice@example.com', name: 'Alice Chen', passwordHash } }),
+    prisma.user.create({ data: { email: 'bob@example.com', name: 'Bob Martin', passwordHash } }),
   ]);
 
   const workspace = await prisma.workspace.create({
@@ -61,6 +66,9 @@ async function main() {
   }
 
   console.log(`Seeded workspace "${workspace.name}" with board "${board.name}"`);
+  console.log(
+    `Log in as alice@example.com (owner) or bob@example.com (member), password: ${DEMO_PASSWORD}`,
+  );
 }
 
 main()

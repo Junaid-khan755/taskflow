@@ -5,7 +5,8 @@ export type Role = 'OWNER' | 'ADMIN' | 'MEMBER';
 
 export type User = { id: string; name: string; email: string };
 
-export type Workspace = { id: string; name: string; slug: string };
+// Lists of workspaces and the board view include your role in that workspace
+export type Workspace = { id: string; name: string; slug: string; role: Role };
 
 export type Member = { role: Role; user: User };
 
@@ -30,7 +31,7 @@ export type Board = {
   description: string | null;
 };
 
-export type BoardDetail = Board & { columns: (Column & { tasks: Task[] })[] };
+export type BoardDetail = Board & { role: Role; columns: (Column & { tasks: Task[] })[] };
 
 /** Fields the user can edit on a task. */
 export type TaskInput = {

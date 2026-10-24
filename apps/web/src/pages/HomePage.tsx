@@ -1,23 +1,39 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { AddInline } from '../components/InlineForm';
+import { MembersDialog } from '../components/MembersDialog';
 import { useBoards, useCreateBoard, useCreateWorkspace, useWorkspaces } from '../lib/queries';
 import type { Workspace } from '../lib/types';
 
-// "Acme Inc!" -> "acme-inc"
-const slugify = (name: string) =>
-  name
+// "Acme Inc!" -> "acme-inc-k3f9". Slugs are unique across all users, so a
+// short random suffix stops two people's "My Team" workspaces from clashing.
+const slugify = (name: string) => {
+  const base = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return [base, suffix].filter(Boolean).join('-');
+};
 
 function WorkspaceSection({ workspace }: { workspace: Workspace }) {
   const { data: boards, isPending } = useBoards(workspace.id);
   const createBoard = useCreateBoard(workspace.id);
+  const [showMembers, setShowMembers] = useState(false);
 
   return (
     <section>
-      <h2 className="mb-3 text-lg font-semibold">{workspace.name}</h2>
+      <div className="mb-3 flex items-center gap-3">
+        <h2 className="text-lg font-semibold">{workspace.name}</h2>
+        <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400 lowercase">
+          {workspace.role}
+        </span>
+        <button onClick={() => setShowMembers(true)} className="btn-ghost ml-auto">
+          Members
+        </button>
+      </div>
+      {showMembers && <MembersDialog workspace={workspace} onClose={() => setShowMembers(false)} />}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {isPending && <p className="text-sm text-slate-400">Loading boards...</p>}
         {boards?.map((board) => (

@@ -1,12 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { healthRouter } from './routes/health.js';
+import { authRouter } from './routes/auth.js';
 import { workspacesRouter } from './routes/workspaces.js';
 import { boardsRouter } from './routes/boards.js';
 import { columnsRouter } from './routes/columns.js';
 import { tasksRouter } from './routes/tasks.js';
+import { requireAuth } from './middleware/auth.js';
 import { errorHandler, notFound } from './middleware/error-handler.js';
 
 // The app is built separately from index.ts (which starts the server)
@@ -17,12 +20,18 @@ export function createApp() {
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
   app.use(express.json());
+  app.use(cookieParser());
 
+  // Public routes
   app.use('/api/health', healthRouter);
-  app.use('/api/workspaces', workspacesRouter);
-  app.use('/api/boards', boardsRouter);
-  app.use('/api/columns', columnsRouter);
-  app.use('/api/tasks', tasksRouter);
+  app.use('/api/auth', authRouter);
+
+  // Everything below needs a logged-in user. Each route then checks that
+  // the user belongs to the workspace it's touching (see lib/access.ts).
+  app.use('/api/workspaces', requireAuth, workspacesRouter);
+  app.use('/api/boards', requireAuth, boardsRouter);
+  app.use('/api/columns', requireAuth, columnsRouter);
+  app.use('/api/tasks', requireAuth, tasksRouter);
 
   app.use(notFound);
   app.use(errorHandler);

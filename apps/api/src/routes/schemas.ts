@@ -60,3 +60,21 @@ export const taskUpdate = z
   .refine(nonEmpty, nonEmptyMessage);
 
 export const taskMove = z.object({ columnId: z.uuid(), position });
+
+// Lowercased so "Ann@Example.com" and "ann@example.com" are the same account
+const email = z.email().trim().toLowerCase().max(254);
+
+export const register = z.object({
+  name,
+  email,
+  // A max length stops someone sending a 10 MB "password" to burn CPU
+  password: z.string().min(8, 'Use at least 8 characters').max(128),
+});
+
+export const login = z.object({ email, password: z.string().min(1).max(128) });
+
+export const memberAdd = z.object({
+  email,
+  // Ownership can't be handed out by invitation
+  role: z.enum(['ADMIN', 'MEMBER']).default('MEMBER'),
+});

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { prisma } from '../src/db.js';
-import { addTasks, api, createBoard, positionsIn, titlesIn } from './helpers.js';
+import { addTasks, api, createBoard, newAgent, positionsIn, signUp, titlesIn } from './helpers.js';
 
 describe('tasks', () => {
   it('adds new tasks to the bottom of the column', async () => {
@@ -12,7 +11,8 @@ describe('tasks', () => {
 
   it('only assigns workspace members', async () => {
     const { todo, user } = await createBoard();
-    const outsider = await prisma.user.create({ data: { email: 'x@example.com', name: 'X' } });
+    // Has an account, but isn't in Ann's workspace
+    const outsider = await signUp('Xavier', newAgent());
 
     await api
       .post(`/api/columns/${todo.id}/tasks`)

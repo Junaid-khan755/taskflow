@@ -17,6 +17,7 @@ import { BoardColumn } from '../components/BoardColumn';
 import { AddInline, InlineForm } from '../components/InlineForm';
 import { TaskCardContent } from '../components/TaskCard';
 import { TaskDialog } from '../components/TaskDialog';
+import { canManage } from '../lib/auth';
 import { toLayout, type TaskLayout } from '../lib/board';
 import {
   useBoard,
@@ -78,6 +79,7 @@ export function BoardPage() {
   }
 
   const layout = dragLayout ?? toLayout(board);
+  const isAdmin = canManage(board.role);
 
   function onDragStart({ active }: DragStartEvent) {
     setActiveId(String(active.id));
@@ -150,7 +152,7 @@ export function BoardPage() {
               onCancel={() => setRenaming(false)}
             />
           </div>
-        ) : (
+        ) : isAdmin ? (
           <h1>
             <button
               onClick={() => setRenaming(true)}
@@ -160,17 +162,22 @@ export function BoardPage() {
               {board.name}
             </button>
           </h1>
+        ) : (
+          <h1 className="text-lg font-semibold">{board.name}</h1>
         )}
-        <button
-          onClick={() => {
-            if (confirm(`Delete the board "${board.name}" and all its tasks?`)) {
-              deleteBoard.mutate(undefined, { onSuccess: () => navigate('/') });
-            }
-          }}
-          className="btn-danger ml-auto"
-        >
-          Delete board
-        </button>
+        {/* The API enforces this too; hiding the button just avoids a confusing error */}
+        {isAdmin && (
+          <button
+            onClick={() => {
+              if (confirm(`Delete the board "${board.name}" and all its tasks?`)) {
+                deleteBoard.mutate(undefined, { onSuccess: () => navigate('/') });
+              }
+            }}
+            className="btn-danger ml-auto"
+          >
+            Delete board
+          </button>
+        )}
       </div>
 
       <DndContext

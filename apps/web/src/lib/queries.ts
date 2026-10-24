@@ -27,6 +27,28 @@ export const useMembers = (workspaceId: string) =>
     queryFn: () => api.get<Member[]>(`/workspaces/${workspaceId}/members`),
   });
 
+export function useAddMember(workspaceId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { email: string; role: 'ADMIN' | 'MEMBER' }) =>
+      api.post<Member>(`/workspaces/${workspaceId}/members`, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.members(workspaceId) }),
+  });
+}
+
+export function useRemoveMember(workspaceId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => api.delete(`/workspaces/${workspaceId}/members/${userId}`),
+    // Removing someone also unassigns their tasks, so refresh boards too
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: keys.members(workspaceId) }),
+        qc.invalidateQueries({ queryKey: ['board'] }),
+      ]),
+  });
+}
+
 export const useBoard = (boardId: string) =>
   useQuery({
     queryKey: keys.board(boardId),

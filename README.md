@@ -43,7 +43,8 @@ npm install
 # 2. Start Postgres (runs on port 5433)
 npm run db:up
 
-# 3. Create the API env file
+# 3. Create the API env file, then set JWT_SECRET in it to a random value:
+#    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 cp apps/api/.env.example apps/api/.env
 
 # 4. Create the tables and load demo data
@@ -54,8 +55,27 @@ npm run db:seed
 npm run dev
 ```
 
-- Web app: http://localhost:5173
+- Web app: http://localhost:5173. Log in as `alice@example.com` (owner) or
+  `bob@example.com` (member) with password `password123`, or sign up.
 - API health check: http://localhost:4000/api/health
+
+## Security
+
+- **Passwords** are hashed with scrypt (salted, memory-hard) and compared in
+  constant time. Login gives the same error for a wrong email or password.
+- **Sessions** are signed JWTs in an `httpOnly`, `SameSite=Lax` cookie:
+  page scripts can't read it (XSS), and other sites can't send it (CSRF).
+- **Authorization:** every request checks you're a member of the workspace
+  that owns the board, column or task. Non-members get `404`, so they can't
+  even confirm it exists. Admin-only actions return `403` for members.
+- **Rate limiting** on login and sign-up slows down password guessing.
+
+| Action                                    | Member | Admin | Owner |
+| ----------------------------------------- | :----: | :---: | :---: |
+| View boards, create boards                |   ✓    |   ✓   |   ✓   |
+| Add, edit, move, delete tasks and columns |   ✓    |   ✓   |   ✓   |
+| Rename or delete boards                   |        |   ✓   |   ✓   |
+| Add or remove members                     |        |   ✓   |   ✓   |
 
 ## Data model
 
@@ -73,25 +93,33 @@ corrupt it. The test suite checks this with 20 parallel requests.
 ## API
 
 All routes are under `/api`. Bodies are JSON and validated with Zod. Invalid
-input returns `400` with the error for each field.
+input returns `400` with the error for each field. Everything except `/auth`
+and `/health` requires login (`401` otherwise).
 
-| Method | Route                             | Description                           |
-| ------ | --------------------------------- | ------------------------------------- |
-| GET    | `/workspaces`                     | List workspaces                       |
-| POST   | `/workspaces`                     | Create a workspace                    |
-| GET    | `/workspaces/:workspaceId/boards` | List a workspace's boards             |
-| POST   | `/workspaces/:workspaceId/boards` | Create a board (with default columns) |
-| GET    | `/boards/:boardId`                | Full board: columns and their tasks   |
-| PATCH  | `/boards/:boardId`                | Rename or describe a board            |
-| DELETE | `/boards/:boardId`                | Delete a board and everything on it   |
-| POST   | `/boards/:boardId/columns`        | Add a column (optionally at a spot)   |
-| PATCH  | `/columns/:columnId`              | Rename or move a column               |
-| DELETE | `/columns/:columnId`              | Delete a column and its tasks         |
-| POST   | `/columns/:columnId/tasks`        | Add a task to the bottom of a column  |
-| GET    | `/tasks/:taskId`                  | Get one task                          |
-| PATCH  | `/tasks/:taskId`                  | Edit title, priority, due date, etc.  |
-| POST   | `/tasks/:taskId/move`             | Move to `{ columnId, position }`      |
-| DELETE | `/tasks/:taskId`                  | Delete a task                         |
+| Method | Route                              | Description                           |
+| ------ | ---------------------------------- | ------------------------------------- |
+| POST   | `/auth/register`                   | Sign up and log in                    |
+| POST   | `/auth/login`                      | Log in                                |
+| POST   | `/auth/logout`                     | Log out                               |
+| GET    | `/auth/me`                         | The logged-in user                    |
+| GET    | `/workspaces`                      | Your workspaces, with your role       |
+| POST   | `/workspaces`                      | Create a workspace (you're the owner) |
+| GET    | `/workspaces/:workspaceId/members` | List members and roles                |
+| POST   | `/workspaces/:workspaceId/members` | Add a member by email (admin)         |
+| DELETE | `/workspaces/:id/members/:userId`  | Remove a member (admin)               |
+| GET    | `/workspaces/:workspaceId/boards`  | List a workspace's boards             |
+| POST   | `/workspaces/:workspaceId/boards`  | Create a board (with default columns) |
+| GET    | `/boards/:boardId`                 | Full board: columns and their tasks   |
+| PATCH  | `/boards/:boardId`                 | Rename or describe a board            |
+| DELETE | `/boards/:boardId`                 | Delete a board and everything on it   |
+| POST   | `/boards/:boardId/columns`         | Add a column (optionally at a spot)   |
+| PATCH  | `/columns/:columnId`               | Rename or move a column               |
+| DELETE | `/columns/:columnId`               | Delete a column and its tasks         |
+| POST   | `/columns/:columnId/tasks`         | Add a task to the bottom of a column  |
+| GET    | `/tasks/:taskId`                   | Get one task                          |
+| PATCH  | `/tasks/:taskId`                   | Edit title, priority, due date, etc.  |
+| POST   | `/tasks/:taskId/move`              | Move to `{ columnId, position }`      |
+| DELETE | `/tasks/:taskId`                   | Delete a task                         |
 
 ## Scripts
 
@@ -113,7 +141,7 @@ input returns `400` with the error for each field.
 - [x] Phase 0: Monorepo setup, tooling, Docker Postgres, health check
 - [x] Phase 1: Database schema, boards and tasks CRUD, API tests
 - [x] Phase 1.5: Kanban board UI with drag-and-drop and optimistic updates
-- [ ] Phase 2: Authentication and workspace roles
+- [x] Phase 2: Authentication and workspace roles
 - [ ] Phase 3: Frontend tests and test coverage
 - [ ] Phase 4: CI/CD with GitHub Actions
 - [ ] Phase 5: Real-time updates, Redis caching, background jobs
