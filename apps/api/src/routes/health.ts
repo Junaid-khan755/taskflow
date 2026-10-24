@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { pool } from '../db.js';
+import { prisma } from '../db.js';
 
 export const healthRouter = Router();
 
@@ -7,7 +7,7 @@ export const healthRouter = Router();
 // and can reach the database.
 healthRouter.get('/', async (_req, res) => {
   try {
-    await pool.query('SELECT 1');
+    await prisma.$queryRaw`SELECT 1`;
     res.json({ status: 'ok', database: 'up', uptime: process.uptime() });
   } catch {
     res.status(503).json({ status: 'degraded', database: 'down', uptime: process.uptime() });

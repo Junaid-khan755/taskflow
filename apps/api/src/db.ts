@@ -1,6 +1,9 @@
-import pg from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from './generated/prisma/client.js';
 import { env } from './config/env.js';
 
-// A pool keeps a few connections open and reuses them, instead of
-// opening a new connection (slow) for every request.
-export const pool = new pg.Pool({ connectionString: env.DATABASE_URL });
+// One shared client for the whole app. Under the hood the pg adapter keeps
+// a connection pool, so connections are reused across requests.
+export const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: env.DATABASE_URL }),
+});

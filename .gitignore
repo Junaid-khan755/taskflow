@@ -2,6 +2,9 @@ node_modules/
 dist/
 coverage/
 
+# Prisma client is generated from schema.prisma on install (see apps/api postinstall)
+apps/api/src/generated/
+
 # Environment files hold secrets; only .env.example is committed
 .env
 .env.*
