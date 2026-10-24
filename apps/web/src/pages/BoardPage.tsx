@@ -135,6 +135,7 @@ export function BoardPage() {
 
   return (
     <div className="flex h-full flex-col">
+      <title>{`${board.name} · TaskFlow`}</title>
       <div className="flex flex-wrap items-center gap-3 border-b border-slate-800 px-4 py-3 sm:px-6">
         <Link to="/" className="text-sm text-slate-400 hover:text-slate-100">
           ← Boards

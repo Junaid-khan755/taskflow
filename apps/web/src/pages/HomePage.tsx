@@ -72,6 +72,7 @@ export function HomePage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6">
+      <title>Your boards · TaskFlow</title>
       {workspaces.length === 0 && (
         <p className="text-slate-400">No workspaces yet. Create one to start adding boards.</p>
       )}

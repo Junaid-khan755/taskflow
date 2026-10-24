@@ -6,8 +6,18 @@ import { Priority } from '../generated/prisma/client.js';
 export const idParams = <K extends string>(...keys: K[]) =>
   z.object(Object.fromEntries(keys.map((k) => [k, z.uuid()])) as Record<K, z.ZodUUID>);
 
-const name = z.string().trim().min(1).max(100);
-const description = z.string().trim().max(5000).nullable();
+// Messages are written for the people using the app, because the frontend
+// shows them as they are
+const name = z
+  .string()
+  .trim()
+  .min(1, "Name can't be empty")
+  .max(100, 'Name must be 100 characters or less');
+const description = z
+  .string()
+  .trim()
+  .max(5000, 'Description must be 5000 characters or less')
+  .nullable();
 const position = z.number().int().min(0);
 
 // PATCH bodies with no fields are almost always a client bug
@@ -41,7 +51,11 @@ export const columnUpdate = z
   .refine(nonEmpty, nonEmptyMessage);
 
 const taskFields = {
-  title: z.string().trim().min(1).max(200),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Title can't be empty")
+    .max(200, 'Title must be 200 characters or less'),
   description: description.optional(),
   priority: z.enum(Priority).optional(),
   // ISO 8601 date-time, e.g. "2026-11-01T17:00:00Z"
@@ -61,17 +75,70 @@ export const taskUpdate = z
 
 export const taskMove = z.object({ columnId: z.uuid(), position });
 
-// Lowercased so "Ann@Example.com" and "ann@example.com" are the same account
-const email = z.email().trim().toLowerCase().max(254);
+// Spaces are trimmed *before* checking the format, so " ann@example.com "
+// is accepted. Lowercased so "Ann@Example.com" and "ann@example.com" are
+// the same account.
+const email = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email('Enter a valid email address').max(254, 'Email is too long'));
+
+// The most-used passwords, which attackers always try first.
+// Real apps check against much bigger lists (e.g. the "Have I Been Pwned" API).
+const COMMON_PASSWORDS = new Set([
+  '12345678',
+  '123456789',
+  '1234567890',
+  '87654321',
+  '11111111',
+  '00000000',
+  'password',
+  'password1',
+  'password12',
+  'password123',
+  'passw0rd',
+  'qwerty123',
+  'qwertyuiop',
+  'abcdefgh',
+  'abc12345',
+  'iloveyou',
+  'letmein1',
+  'welcome1',
+  'admin123',
+  'taskflow',
+  'taskflow1',
+]);
+
+const newPassword = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  // A max length stops someone sending a huge "password" to burn CPU
+  .max(128, 'Password must be 128 characters or less')
+  .refine((password) => password.trim() !== '', "Password can't be only spaces")
+  .refine(
+    (password) => !COMMON_PASSWORDS.has(password.toLowerCase()),
+    'This password is too common. Please choose one that is harder to guess.',
+  );
 
 export const register = z.object({
-  name,
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Please enter your name')
+    .max(100, 'Name must be 100 characters or less'),
   email,
-  // A max length stops someone sending a 10 MB "password" to burn CPU
-  password: z.string().min(8, 'Use at least 8 characters').max(128),
+  password: newPassword,
 });
 
-export const login = z.object({ email, password: z.string().min(1).max(128) });
+// Login doesn't check strength: it only needs to match what was saved
+export const login = z.object({
+  email,
+  password: z
+    .string()
+    .min(1, 'Please enter your password')
+    .max(128, 'Password must be 128 characters or less'),
+});
 
 export const memberAdd = z.object({
   email,

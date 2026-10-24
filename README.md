@@ -43,8 +43,7 @@ npm install
 # 2. Start Postgres (runs on port 5433)
 npm run db:up
 
-# 3. Create the API env file, then set JWT_SECRET in it to a random value:
-#    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# 3. Create the API env file
 cp apps/api/.env.example apps/api/.env
 
 # 4. Create the tables and load demo data
@@ -62,13 +61,22 @@ npm run dev
 ## Security
 
 - **Passwords** are hashed with scrypt (salted, memory-hard) and compared in
-  constant time. Login gives the same error for a wrong email or password.
-- **Sessions** are signed JWTs in an `httpOnly`, `SameSite=Lax` cookie:
+  constant time. Very common passwords are refused. Login gives the same
+  error, in the same time, for a wrong email or a wrong password.
+- **Sessions** are random tokens in an `httpOnly`, `SameSite=Lax` cookie:
   page scripts can't read it (XSS), and other sites can't send it (CSRF).
+  The database stores only a SHA-256 hash of each token, and logging out
+  deletes the session, so a copied cookie stops working immediately.
 - **Authorization:** every request checks you're a member of the workspace
   that owns the board, column or task. Non-members get `404`, so they can't
   even confirm it exists. Admin-only actions return `403` for members.
-- **Rate limiting** on login and sign-up slows down password guessing.
+- **Rate limiting:** 10 wrong passwords per account, 100 per network, and 10
+  sign-ups per hour per network. Successful logins never count.
+- **Safe redirects:** after login, `?next=` only accepts paths inside the app.
+
+These were checked by attacking the app (SQL injection, XSS, forged and
+replayed session tokens, brute force, open redirects, oversized requests),
+and each fix has a test so it can't come back.
 
 | Action                                    | Member | Admin | Owner |
 | ----------------------------------------- | :----: | :---: | :---: |

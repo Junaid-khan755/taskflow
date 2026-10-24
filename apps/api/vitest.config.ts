@@ -6,7 +6,6 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       DATABASE_URL: TEST_DATABASE_URL,
-      JWT_SECRET: 'test-secret-that-is-at-least-32-characters-long',
     },
     globalSetup: './test/global-setup.ts',
     setupFiles: './test/setup.ts',

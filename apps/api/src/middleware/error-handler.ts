@@ -28,6 +28,12 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  // ...and this when the body is over its 100 KB limit
+  if (err.type === 'entity.too.large') {
+    res.status(413).json({ error: 'Request is too large' });
+    return;
+  }
+
   if (err instanceof Prisma.PrismaClientKnownRequestError && err.code in prismaErrors) {
     const [status, message] = prismaErrors[err.code];
     res.status(status).json({ error: message });

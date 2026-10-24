@@ -9,7 +9,9 @@ import {
 } from 'react-router';
 import { Toaster } from './components/Toaster';
 import { useLogout, useMe } from './lib/auth';
-import { AuthPage } from './pages/AuthPage';
+import { ErrorPage } from './pages/ErrorPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 import { BoardPage } from './pages/BoardPage';
 import { HomePage } from './pages/HomePage';
 
@@ -69,6 +71,7 @@ function RequireAuth() {
 function NotFound() {
   return (
     <div className="p-8">
+      <title>Page not found · TaskFlow</title>
       <p className="text-slate-400">Page not found.</p>
       <Link to="/" className="mt-2 inline-block text-indigo-400 hover:underline">
         ← Back to all boards
@@ -80,9 +83,11 @@ function NotFound() {
 const router = createBrowserRouter([
   {
     element: <Layout />,
+    // Any crash while drawing a page shows a friendly page, not a stack trace
+    errorElement: <ErrorPage />,
     children: [
-      { path: 'login', element: <AuthPage mode="login" /> },
-      { path: 'register', element: <AuthPage mode="register" /> },
+      { path: 'login', element: <LoginPage /> },
+      { path: 'register', element: <RegisterPage /> },
       {
         element: <RequireAuth />,
         children: [

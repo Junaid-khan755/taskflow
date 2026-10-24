@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { healthRouter } from './routes/health.js';
-import { authRouter } from './routes/auth.js';
+import { createAuthRouter } from './routes/auth.js';
 import { workspacesRouter } from './routes/workspaces.js';
 import { boardsRouter } from './routes/boards.js';
 import { columnsRouter } from './routes/columns.js';
@@ -14,8 +14,13 @@ import { errorHandler, notFound } from './middleware/error-handler.js';
 
 // The app is built separately from index.ts (which starts the server)
 // so tests can import it without opening a real port.
-export function createApp() {
+// Rate limits are on everywhere except tests (which can turn them on).
+export function createApp({ rateLimit = env.NODE_ENV !== 'test' } = {}) {
   const app = express();
+
+  // Behind a host's proxy, read the real visitor address from the proxy's
+  // X-Forwarded-For header (see TRUST_PROXY in config/env.ts)
+  app.set('trust proxy', env.TRUST_PROXY);
 
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
@@ -24,7 +29,7 @@ export function createApp() {
 
   // Public routes
   app.use('/api/health', healthRouter);
-  app.use('/api/auth', authRouter);
+  app.use('/api/auth', createAuthRouter({ rateLimit }));
 
   // Everything below needs a logged-in user. Each route then checks that
   // the user belongs to the workspace it's touching (see lib/access.ts).
