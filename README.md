@@ -9,6 +9,7 @@ A team task manager (think a lightweight Trello/Linear) built with the PERN stac
 | Layer    | Tech                                             |
 | -------- | ------------------------------------------------ |
 | Frontend | React, TypeScript, Vite, Tailwind CSS            |
+| UI data  | TanStack Query, React Router, dnd-kit            |
 | Backend  | Node.js, Express 5, TypeScript, Zod              |
 | Database | PostgreSQL 17 (Docker), Prisma ORM               |
 | Testing  | Vitest, Supertest (against a real Postgres)      |
@@ -111,8 +112,9 @@ input returns `400` with the error for each field.
 
 - [x] Phase 0: Monorepo setup, tooling, Docker Postgres, health check
 - [x] Phase 1: Database schema, boards and tasks CRUD, API tests
+- [x] Phase 1.5: Kanban board UI with drag-and-drop and optimistic updates
 - [ ] Phase 2: Authentication and workspace roles
-- [ ] Phase 3: Unit and API tests
+- [ ] Phase 3: Frontend tests and test coverage
 - [ ] Phase 4: CI/CD with GitHub Actions
 - [ ] Phase 5: Real-time updates, Redis caching, background jobs
 - [ ] Phase 6: Deployment, logging, monitoring

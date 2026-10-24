@@ -19,6 +19,14 @@ describe('workspaces', () => {
     expect(res.body.details).toHaveProperty('slug');
   });
 
+  it('lists members with their roles', async () => {
+    const { workspace, user } = await createBoard();
+    const res = await api.get(`/api/workspaces/${workspace.id}/members`).expect(200);
+    expect(res.body).toEqual([
+      { role: 'OWNER', user: { id: user.id, name: user.name, email: user.email } },
+    ]);
+  });
+
   it('returns 404 when listing boards of a missing workspace', async () => {
     await api.get(`/api/workspaces/${crypto.randomUUID()}/boards`).expect(404);
   });

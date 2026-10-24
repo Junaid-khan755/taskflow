@@ -29,6 +29,20 @@ workspacesRouter.get('/:workspaceId/boards', async (req, res) => {
   res.json(workspace.boards);
 });
 
+workspacesRouter.get('/:workspaceId/members', async (req, res) => {
+  const { workspaceId } = parse(idParams('workspaceId'), req.params);
+  const workspace = await prisma.workspace.findUniqueOrThrow({
+    where: { id: workspaceId },
+    select: {
+      members: {
+        orderBy: { joinedAt: 'asc' },
+        select: { role: true, user: { select: { id: true, name: true, email: true } } },
+      },
+    },
+  });
+  res.json(workspace.members);
+});
+
 workspacesRouter.post('/:workspaceId/boards', async (req, res) => {
   const { workspaceId } = parse(idParams('workspaceId'), req.params);
   const { columns, ...data } = parse(boardCreate, req.body);
